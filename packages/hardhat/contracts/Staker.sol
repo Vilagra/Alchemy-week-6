@@ -10,8 +10,8 @@ contract Staker {
 
   mapping(address => uint256) public balances; 
   mapping(address => uint256) public depositTimestamps;
-
-  uint256 public constant rewardRatePerSecond = 0.1 ether; 
+  //interest 5 precent per second
+  uint256 public constant interest = 5; 
   uint256 public withdrawalDeadline = block.timestamp + 120 seconds; 
   uint256 public claimDeadline = block.timestamp + 240 seconds; 
   uint256 public currentBlock = 0;
@@ -82,13 +82,18 @@ contract Staker {
   function withdraw() public withdrawalDeadlineReached(true) claimDeadlineReached(false) notCompleted{
     require(balances[msg.sender] > 0, "You have no balance to withdraw!");
     uint256 individualBalance = balances[msg.sender];
-    uint256 indBalanceRewards = individualBalance + ((block.timestamp-depositTimestamps[msg.sender])*rewardRatePerSecond);
+    uint256 indBalanceRewards = accrueInterest(individualBalance, block.timestamp-depositTimestamps[msg.sender]);
     balances[msg.sender] = 0;
 
     // Transfer all ETH via call! (not transfer) cc: https://solidity-by-example.org/sending-ether
     (bool sent, bytes memory data) = msg.sender.call{value: indBalanceRewards}("");
     require(sent, "RIP; withdrawal failed :( ");
   }
+
+  function accrueInterest(uint256 _principal,  uint256 _age) private view returns (uint256) {
+        uint256 ratePerSecond = _principal*interest/100;
+        return _principal + ratePerSecond*_age;
+    }
 
     /*
   Allows any user to repatriate "unproductive" funds that are left in the staking contract
