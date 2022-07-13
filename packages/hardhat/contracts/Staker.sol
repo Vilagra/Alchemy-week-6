@@ -70,6 +70,7 @@ contract Staker {
   
   function stake() public payable withdrawalDeadlineReached(false) claimDeadlineReached(false) {
     balances[msg.sender] = balances[msg.sender] + msg.value;
+    
     depositTimestamps[msg.sender] = block.timestamp;
     emit Stake(msg.sender, msg.value);
   }
